@@ -103,16 +103,49 @@ def main():
                 clientsocket.close()
                 continue
 
-            filepath = "public/index.html"
-            with open(filepath, "rb") as f:
-                content = f.read()
+            method = req["method"]
+            path = req["path"]
 
-            resp = create_response(
-                200,
-                "OK",
-                {"Content-Type": "text/html; charset=utf-8"},
-                content,
-            )
+            if method == "GET":
+                if path == "/page":
+                    page_id = req["querypar"].get("id", "Not specified")
+                    html = f"<h2>Page Info</h2><p>ID: {page_id}</p>"
+                    resp = create_response(
+                        200,
+                        "OK",
+                        {"Content-Type": "text/html; charset=utf-8"},
+                        html.encode("utf-8"),
+                    )
+                else:
+                    filepath = (
+                        "public/index.html" if path == "/" else f"public{path}"
+                    )
+
+                    if os.path.exists(filepath) and os.path.isfile(filepath):
+                        with open(filepath, "rb") as f:
+                            content = f.read()
+
+                        contenttype = "text/html"
+                        if filepath.endswith(".css"):
+                            contenttype = "text/css"
+                        elif filepath.endswith(".js"):
+                            contenttype = "application/javascript"
+
+                        resp = create_response(
+                            200,
+                            "OK",
+                            {"Content-Type": f"{contenttype}; charset=utf-8"},
+                            content,
+                        )
+                    else:
+                        html_404 = "<h1>404 Not Found</h1>"
+                        resp = create_response(
+                            404,
+                            "Not Found",
+                            {"Content-Type": "text/html"},
+                            html_404.encode("utf-8"),
+                        )
+
             clientsocket.sendall(resp)
 
         except Exception as e:
