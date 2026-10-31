@@ -1,7 +1,7 @@
 ﻿import socket
 from urllib.parse import parse_qs, urlparse
 import json
-
+import os
 
 def parsereq(requestdata):
     parts = requestdata.split("\r\n\r\n", 1)
@@ -82,22 +82,43 @@ def main():
 
     print(f"Server started on http://{host}:{port}")
 
-        
+    if not os.path.exists("public"):
+        os.makedirs("public")
+
+    if not os.path.exists("public/index.html"):
+        with open("public/index.html", "w", encoding="utf-8") as f:
+            f.write("<h1>Welcome to my Socket Server!</h1>\n<p>It works!</p>")
+
     while True:
         clientsocket, addr = servsocket.accept()
-        data = clientsocket.recv(4096).decode("utf-8", errors="ignore")
-        if data:
-            req = parsereq(data)
-            print("Parsed request:", req)
 
-        response = create_response(
-            200,
-            "OK",
-            {"Content-Type": "text/plain; charset=utf-8"},
-            b"Response builder is working",
-        )
-        clientsocket.sendall(response)
-        clientsocket.close()
+        try:
+            data = clientsocket.recv(4096).decode("utf-8", errors="ignore")
+            if not data:
+                clientsocket.close()
+                continue
+
+            req = parsereq(data)
+            if req is None:
+                clientsocket.close()
+                continue
+
+            filepath = "public/index.html"
+            with open(filepath, "rb") as f:
+                content = f.read()
+
+            resp = create_response(
+                200,
+                "OK",
+                {"Content-Type": "text/html; charset=utf-8"},
+                content,
+            )
+            clientsocket.sendall(resp)
+
+        except Exception as e:
+            print("Error handling request:", e)
+        finally:
+            clientsocket.close()
 
 
 
