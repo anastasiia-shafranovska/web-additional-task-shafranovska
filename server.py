@@ -146,6 +146,25 @@ def main():
                             html_404.encode("utf-8"),
                         )
 
+            elif method == "POST":
+                resdata = {
+                    "message": "POST request received!",
+                    "your_data": req["body"],
+                    "your_headers": req["headers"],
+                }
+                jsonbytes = json.dumps(resdata, indent=2).encode("utf-8")
+                resp = create_response(
+                    200, "OK", {"Content-Type": "application/json"}, jsonbytes
+                )
+
+            else:
+                resp = create_response(
+                    405,
+                    "Method Not Allowed",
+                    {"Content-Type": "text/plain"},
+                    b"Method Not Allowed",
+                )
+
             clientsocket.sendall(resp)
 
         except Exception as e:
